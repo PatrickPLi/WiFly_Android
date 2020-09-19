@@ -5,6 +5,7 @@ import android.hardware.*
 import android.hardware.SensorManager.getOrientation
 import android.hardware.SensorManager.getRotationMatrix
 import android.os.Bundle
+import android.util.Log
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.snackbar.Snackbar
 import androidx.appcompat.app.AppCompatActivity
@@ -15,6 +16,14 @@ import androidx.core.graphics.rotationMatrix
 import kotlinx.android.synthetic.main.fragment_first.*
 import java.lang.System.currentTimeMillis
 import kotlin.system.measureTimeMillis
+
+import com.example.joystick.mqtt.MqttClientHelper
+import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken
+import org.eclipse.paho.client.mqttv3.MqttCallbackExtended
+import org.eclipse.paho.client.mqttv3.MqttException
+import org.eclipse.paho.client.mqttv3.MqttMessage
+import java.util.*
+import kotlin.concurrent.schedule
 
 class MainActivity : AppCompatActivity(), SensorEventListener {
 
@@ -34,6 +43,10 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     var azimuth_adj = 0.0f
     var roll_adj = 0.0f
     var pitch_adj = 0.0f
+
+    private val mqttClient by lazy {
+        MqttClientHelper(this)
+    }
 
     override fun onAccuracyChanged(s: Sensor?, i: Int) {
     }
@@ -56,7 +69,41 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             zeroAxis()
         }
 
+        setMqttCallBack()
+        Timer("CheckMqttConnection", false).schedule(3000) {
+            if (!mqttClient.isConnected()) {
+                Snackbar.make(findViewById(android.R.id.content),"Failed to connect to: '$SOLACE_MQTT_HOST' within 3 seconds", Snackbar.LENGTH_INDEFINITE)
+                    .setAction("Action", null).show()
+            }
+        }
+
         sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
+    }
+
+    private fun setMqttCallBack() {
+        mqttClient.setCallback(object : MqttCallbackExtended {
+            override fun connectComplete(b: Boolean, s: String) {
+                val snackbarMsg = "Connected to host:\n'$SOLACE_MQTT_HOST'."
+                Log.w("Debug", snackbarMsg)
+                Snackbar.make(findViewById(android.R.id.content), snackbarMsg, Snackbar.LENGTH_LONG)
+                    .setAction("Action", null).show()
+            }
+
+            override fun messageArrived(topic: String?, message: MqttMessage?) {
+                Log.w("Debug", "Message arrived")
+            }
+
+            override fun connectionLost(throwable: Throwable) {
+                val snackbarMsg = "Connection to host lost:\n'$SOLACE_MQTT_HOST'"
+                Log.w("Debug", snackbarMsg)
+                Snackbar.make(findViewById(android.R.id.content), snackbarMsg, Snackbar.LENGTH_LONG)
+                    .setAction("Action", null).show()
+            }
+
+            override fun deliveryComplete(iMqttDeliveryToken: IMqttDeliveryToken) {
+                Log.w("Debug", "Message published to host '$SOLACE_MQTT_HOST'")
+            }
+        })
     }
 
     private fun zeroAxis() {
@@ -98,19 +145,52 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         roll = roll - roll_adj
         pitch = pitch - pitch_adj
 
-        azimuth = azimuth + alpha * (azimuth_old - azimuth)
-        roll = roll + alpha * (roll_old - roll)
-        pitch = pitch + alpha * (pitch_old - pitch)
+        if (azimuth >= 90)
+        {
+            azimuth = 89.99f
+        }
+        else if (azimuth <= -90) {
+            azimuth = -89.99f
+        }
 
-        azimuth_old = azimuth
-        roll_old = roll
-        pitch_old = pitch
+        if (roll >= 90)
+        {
+            roll = 89.99f
+        }
+        else if (roll <= -90) {
+            roll = -89.99f
+        }
+
+        if (pitch >= 90)
+        {
+            pitch = 89.99f
+        }
+        else if (pitch <= -90) {
+            pitch = 89.99f
+        }
+
+//        azimuth = azimuth + alpha * (azimuth_old - azimuth)
+//        roll = roll + alpha * (roll_old - roll)
+//        pitch = pitch + alpha * (pitch_old - pitch)
+
+//        azimuth_old = azimuth
+//        roll_old = roll
+//        pitch_old = pitch
 
 
 
         xAxis.text = "X Value: ".plus(roll.toString())
         yAxis.text = "Y Value: ".plus(pitch.toString())
         zAxis.text = "Z Value: ".plus(azimuth.toString())
+
+        var msg_string = String.format("%.2f", roll) + " " + String.format("%.2f", pitch) + " " + String.format("%.2f", azimuth)
+
+        try {
+            mqttClient.publish("joystick_axis", msg_string)
+            "Published to topic 'joystick_axis'"
+        } catch (ex: MqttException) {
+            "Error publishing to topic: joystick_axis"
+        }
 
 //        val accelerationSquareRoot = (xVal * xVal + yVal * yVal + zVal * zVal) / (SensorManager.GRAVITY_EARTH * SensorManager.GRAVITY_EARTH)
 //
