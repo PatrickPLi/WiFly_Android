@@ -2,6 +2,7 @@ package com.example.joystick
 
 import android.content.Context
 import android.content.pm.ActivityInfo
+import android.graphics.Color
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
@@ -9,11 +10,12 @@ import android.hardware.SensorManager
 import android.hardware.SensorManager.getOrientation
 import android.hardware.SensorManager.getRotationMatrix
 import android.os.Bundle
+import android.os.VibrationEffect
+import android.os.Vibrator
 import android.util.Log
-import android.view.Display
-import android.view.Menu
-import android.view.MenuItem
-import android.view.WindowManager
+import android.view.*
+import android.widget.Button
+import android.widget.SeekBar
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.graphics.rotationMatrix
@@ -21,6 +23,7 @@ import com.example.joystick.mqtt.MqttClientHelper
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.android.synthetic.main.fragment_first.*
+import kotlinx.coroutines.delay
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken
 import org.eclipse.paho.client.mqttv3.MqttCallbackExtended
 import org.eclipse.paho.client.mqttv3.MqttException
@@ -37,7 +40,11 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     var azimuth = 0.0f
     var roll = 0.0f
     var pitch = 0.0f
+    var brake = 0
+    var gear = 0
 
+
+    val vib_len = 200L
     var alpha = 0.15f
 
     var azimuth_old = 0.0f
@@ -47,6 +54,10 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     var azimuth_adj = 0.0f
     var roll_adj = 0.0f
     var pitch_adj = 0.0f
+
+    var msg_string = "0 0 0"
+
+    var start = false
 
     // System display. Need this for determining rotation.
     private var mDisplay: Display? = null
@@ -58,14 +69,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     override fun onAccuracyChanged(s: Sensor?, i: Int) {
     }
 
-    override fun onSensorChanged(event: SensorEvent?) {
-        if (event!!.sensor.type == Sensor.TYPE_ACCELEROMETER) {
-            getAccelerometer(event)
-        }
-        if (event!!.sensor.type == Sensor.TYPE_MAGNETIC_FIELD) {
-            getMagField(event)
-        }
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -76,6 +79,8 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         findViewById<FloatingActionButton>(R.id.fab).setOnClickListener {
             zeroAxis()
         }
+
+
 
         setMqttCallBack()
         Timer("CheckMqttConnection", false).schedule(3000) {
@@ -91,13 +96,27 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         mDisplay = wm.defaultDisplay
     }
 
+
+    override fun onSensorChanged(event: SensorEvent?) {
+        if (event!!.sensor.type == Sensor.TYPE_ACCELEROMETER) {
+            if (start)
+            {
+                getAccelerometer(event)
+            }
+        }
+        if (event!!.sensor.type == Sensor.TYPE_MAGNETIC_FIELD) {
+            getMagField(event)
+        }
+    }
+
     private fun setMqttCallBack() {
         mqttClient.setCallback(object : MqttCallbackExtended {
             override fun connectComplete(b: Boolean, s: String) {
                 val snackbarMsg = "Connected to host:\n'$SOLACE_MQTT_HOST'."
                 Log.w("Debug", snackbarMsg)
-                Snackbar.make(findViewById(android.R.id.content), snackbarMsg, Snackbar.LENGTH_LONG)
+                Snackbar.make(findViewById(android.R.id.content), snackbarMsg, Snackbar.LENGTH_SHORT)
                     .setAction("Action", null).show()
+                start = true
             }
 
             override fun messageArrived(topic: String?, message: MqttMessage?) {
@@ -117,6 +136,35 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         })
     }
 
+    fun press_gear(view: View) {
+        gear = gear xor 1
+        val v = (getSystemService(Context.VIBRATOR_SERVICE) as Vibrator)
+        v.vibrate(VibrationEffect.createOneShot(vib_len,
+            VibrationEffect.DEFAULT_AMPLITUDE))
+        if (gear == 1)
+        {
+            gear_btn.setBackgroundColor(Color.RED)
+        }
+        else
+        {
+            gear_btn.setBackgroundColor(Color.GREEN)
+        }
+    }
+
+    fun toggle_brake(view: View) {
+        brake = brake xor 1
+        if (brake == 1)
+        {
+            brake_btn.setBackgroundColor(Color.RED)
+        }
+        else
+        {
+            brake_btn.setBackgroundColor(Color.WHITE)
+        }
+        val v = (getSystemService(Context.VIBRATOR_SERVICE) as Vibrator)
+        v.vibrate(VibrationEffect.createOneShot(vib_len,
+            VibrationEffect.DEFAULT_AMPLITUDE))
+    }
     private fun zeroAxis() {
         azimuth_adj = azimuth
         pitch_adj = pitch
@@ -135,6 +183,12 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         val yVal = event.values[1]
         val zVal = event.values[2]
 
+//        var yaw_seek = findViewById<SeekBar>(R.id.rudder)
+        var azimuth_raw = rudderSeek.getProgress()
+
+//        var throttle_seek = findViewById<SeekBar>(R.id.throttle)
+        var throttle_raw = throttleSeek.getProgress()
+
         val ori = FloatArray(3)
         val rMat = FloatArray(9)
 
@@ -145,11 +199,20 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             rotationMatrixAdjusted);
         getOrientation(rMat, ori)
 
-        azimuth = ori[0]
+//        azimuth = ori[0]
+        val OldMin = 0
+        val OldMax = 100
+        val NewMin = -30f
+        val NewMax = 30f
+
+        val OldRange = (OldMax - OldMin)
+        val NewRange = (NewMax - NewMin)
+        azimuth = scale(azimuth_raw, 0, 100, -30f, 30f)
         roll = ori[1]
         pitch = ori[2]
+        var adjusted_throttle = scale(throttle_raw, 0, 100, -44.99f, 44.99f)
 
-        azimuth = (azimuth * 180/Math.PI).toFloat()
+//        azimuth = (azimuth * 180/Math.PI).toFloat()
         pitch = (pitch * 180/Math.PI).toFloat()
         roll = (roll * 180/Math.PI).toFloat()
 
@@ -157,33 +220,47 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         var adjusted_roll = roll - roll_adj
         var adjusted_pitch = pitch - pitch_adj
 
-        adjusted_roll = (-1 * roll).toFloat()
+        adjusted_roll = (-1 * adjusted_roll).toFloat()
 //        adjusted_pitch = (pitch + 90).toFloat()
 
-
+        val v = (getSystemService(Context.VIBRATOR_SERVICE) as Vibrator)
+        var hit_limit = false;
         if (adjusted_azimuth >= 45)
         {
             adjusted_azimuth = 44.99f
+            hit_limit = true;
         }
         else if (adjusted_azimuth <= -45) {
             adjusted_azimuth = -44.99f
+            hit_limit = true;
         }
 
         if (adjusted_roll >= 45)
         {
             adjusted_roll = 44.99f
+            hit_limit = true;
         }
         else if (adjusted_roll <= -45) {
             adjusted_roll = -44.99f
+            hit_limit = true;
         }
 
         if (adjusted_pitch >= 45)
         {
             adjusted_pitch = 44.99f
+            hit_limit = true;
         }
         else if (adjusted_pitch <= -45) {
             adjusted_pitch = -44.99f
+            hit_limit = true;
         }
+
+        if (hit_limit) {
+            v.vibrate(
+                VibrationEffect.createOneShot(vib_len,
+                    VibrationEffect.EFFECT_HEAVY_CLICK))
+        }
+
 
 //        azimuth = azimuth + alpha * (azimuth_old - azimuth)
 //        roll = roll + alpha * (roll_old - roll)
@@ -195,11 +272,24 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
 
 
-        xAxis.text = "X Value: ".plus(adjusted_roll.toString())
-        yAxis.text = "Y Value: ".plus(adjusted_pitch.toString())
-        zAxis.text = "Z Value: ".plus(adjusted_azimuth.toString())
+        xAxis.text = "Roll: ".plus(String.format("%.2f", adjusted_roll))
+        yAxis.text = "Pitch: ".plus(String.format("%.2f", adjusted_pitch))
+        zAxis.text = "Yaw: ".plus(String.format("%.2f", adjusted_azimuth))
+        throttleAxis.text = "Throttle: ".plus(throttle_raw)
 
-        var msg_string = String.format("%.2f", adjusted_roll) + " " + String.format("%.2f", adjusted_pitch) + " " + String.format("%.2f", adjusted_azimuth)
+        msg_string = String.format("%.2f", adjusted_roll) + " " + String.format("%.2f", adjusted_pitch) + " " + String.format("%.2f", adjusted_azimuth) + " " + String.format("%.2f", adjusted_throttle) + " " + String.format("%d", gear) + " " + String.format("%d", brake)
+//        azimuth = 0f
+        if (azimuth_raw > 50) {
+            azimuth_raw -= 50
+            azimuth_raw /=2
+            azimuth_raw += 50
+        }
+        else {
+            azimuth_raw = 50 - azimuth_raw
+            azimuth_raw /= 2
+            azimuth_raw = 50 - azimuth_raw
+        }
+        rudderSeek.setProgress(azimuth_raw)
 
         try {
             mqttClient.publish("joystick_axis", msg_string)
@@ -207,12 +297,17 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         } catch (ex: MqttException) {
             "Error publishing to topic: joystick_axis"
         }
-
 //        val accelerationSquareRoot = (xVal * xVal + yVal * yVal + zVal * zVal) / (SensorManager.GRAVITY_EARTH * SensorManager.GRAVITY_EARTH)
 //
 //        if (accelerationSquareRoot >= 3) {
 //            Toast.makeText(this, "Device was shuffled", Toast.LENGTH_SHORT).show()
 //        }
+    }
+
+    private fun scale(raw: Int, oldMin: Int, oldMax: Int, newMin: Float, newMax: Float): Float {
+        val OldRange = (oldMax - oldMin)
+        val NewRange = (newMax - newMin)
+        return ((((raw - oldMin)*NewRange)/OldRange) + newMin).toFloat()
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -233,7 +328,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     override fun onResume() {
         super.onResume()
         sensorManager!!.registerListener(this, sensorManager!!.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD), SensorManager.SENSOR_DELAY_NORMAL)
-        sensorManager!!.registerListener(this, sensorManager!!.getDefaultSensor(Sensor.TYPE_ACCELEROMETER), SensorManager.SENSOR_DELAY_NORMAL)
+        sensorManager!!.registerListener(this, sensorManager!!.getDefaultSensor(Sensor.TYPE_ACCELEROMETER), 400000)
     }
 
     override fun onPause() {
