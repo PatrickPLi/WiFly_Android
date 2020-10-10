@@ -7,6 +7,19 @@
     android:layout_margin="50dp"
     tools:context=".FirstFragment">
 
+    <Button
+        android:id="@+id/brake_btn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="92dp"
+        android:background="@android:color/white"
+        android:onClick="toggle_brake"
+        android:text="Brakes"
+        app:layout_constraintBottom_toTopOf="@+id/gear_btn"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.84000003" />
+
     <TextView
         android:id="@+id/xAxis"
         android:layout_width="wrap_content"
@@ -15,7 +28,7 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toStartOf="@+id/gear_btn"
         app:layout_constraintHorizontal_bias="0.2"
-        app:layout_constraintStart_toEndOf="@+id/brake_btn"
+        app:layout_constraintStart_toEndOf="@+id/view_btn"
         app:layout_constraintTop_toTopOf="parent" />
 
     <TextView
@@ -41,22 +54,22 @@
         app:layout_constraintTop_toBottomOf="@+id/rudderSeek" />
 
     <Button
-        android:id="@+id/brake_btn"
+        android:id="@+id/view_btn"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="100dp"
-        android:onClick="toggle_brake"
-        android:text="Brakes"
+        android:background="@android:color/white"
+        android:onClick="toggle_view"
+        android:text="Toggle View"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.501" />
+        tools:layout_editor_absoluteX="125dp" />
 
     <Button
         android:id="@+id/gear_btn"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginEnd="92dp"
+        android:background="@android:color/holo_green_light"
         android:onClick="press_gear"
         android:text="Gear"
         app:layout_constraintBottom_toBottomOf="parent"
@@ -97,5 +110,29 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/throttleSeek" />
+
+    <Button
+        android:id="@+id/flapsUp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Flaps Up"
+        android:onClick="flaps_up"
+        app:layout_constraintBottom_toTopOf="@+id/flapsDown"
+        app:layout_constraintEnd_toStartOf="@+id/throttleSeek"
+        app:layout_constraintStart_toEndOf="@+id/rudderSeek"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="1.0" />
+
+    <Button
+        android:id="@+id/flapsDown"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:onClick="flaps_down"
+        android:text="Flaps Down"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/throttleSeek"
+        app:layout_constraintStart_toEndOf="@+id/rudderSeek"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="1.0" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

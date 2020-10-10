@@ -14,16 +14,12 @@ import android.os.VibrationEffect
 import android.os.Vibrator
 import android.util.Log
 import android.view.*
-import android.widget.Button
-import android.widget.SeekBar
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.graphics.rotationMatrix
 import com.example.joystick.mqtt.MqttClientHelper
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.android.synthetic.main.fragment_first.*
-import kotlinx.coroutines.delay
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken
 import org.eclipse.paho.client.mqttv3.MqttCallbackExtended
 import org.eclipse.paho.client.mqttv3.MqttException
@@ -43,8 +39,12 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     var brake = 0
     var gear = 0
 
+    var fu = 0
+    var fd = 0
+    var vt = 0
 
-    val vib_len = 200L
+
+    val vib_len = 100L
     var alpha = 0.15f
 
     var azimuth_old = 0.0f
@@ -117,10 +117,19 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                 Snackbar.make(findViewById(android.R.id.content), snackbarMsg, Snackbar.LENGTH_SHORT)
                     .setAction("Action", null).show()
                 start = true
+                try {
+                    mqttClient.subscribe("btnRecv")
+                    "Subscribed to topic btnRecv"
+                } catch (ex: MqttException) {
+                    "Error subscribing to topic: btnRecv"
+                }
             }
 
             override fun messageArrived(topic: String?, message: MqttMessage?) {
                 Log.w("Debug", "Message arrived")
+                vt = 0
+                fu = 0
+                fd = 0
             }
 
             override fun connectionLost(throwable: Throwable) {
@@ -149,6 +158,27 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         {
             gear_btn.setBackgroundColor(Color.GREEN)
         }
+    }
+
+    fun flaps_up(view: View) {
+        val v = (getSystemService(Context.VIBRATOR_SERVICE) as Vibrator)
+        v.vibrate(VibrationEffect.createOneShot(vib_len,
+            VibrationEffect.DEFAULT_AMPLITUDE))
+        fu = 1
+    }
+
+    fun flaps_down(view: View) {
+        val v = (getSystemService(Context.VIBRATOR_SERVICE) as Vibrator)
+        v.vibrate(VibrationEffect.createOneShot(vib_len,
+            VibrationEffect.DEFAULT_AMPLITUDE))
+        fd = 1
+    }
+
+    fun toggle_view(view: View) {
+        val v = (getSystemService(Context.VIBRATOR_SERVICE) as Vibrator)
+        v.vibrate(VibrationEffect.createOneShot(vib_len,
+            VibrationEffect.DEFAULT_AMPLITUDE))
+        vt = 1
     }
 
     fun toggle_brake(view: View) {
@@ -257,7 +287,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
         if (hit_limit) {
             v.vibrate(
-                VibrationEffect.createOneShot(vib_len,
+                VibrationEffect.createOneShot(400L,
                     VibrationEffect.EFFECT_HEAVY_CLICK))
         }
 
@@ -277,7 +307,8 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         zAxis.text = "Yaw: ".plus(String.format("%.2f", adjusted_azimuth))
         throttleAxis.text = "Throttle: ".plus(throttle_raw)
 
-        msg_string = String.format("%.2f", adjusted_roll) + " " + String.format("%.2f", adjusted_pitch) + " " + String.format("%.2f", adjusted_azimuth) + " " + String.format("%.2f", adjusted_throttle) + " " + String.format("%d", gear) + " " + String.format("%d", brake)
+        msg_string = String.format("%.2f", adjusted_roll) + " " + String.format("%.2f", adjusted_pitch) + " " + String.format("%.2f", adjusted_azimuth) + " " + String.format("%.2f", adjusted_throttle) + " " + String.format("%d", gear) + " " + String.format("%d", brake) + " " + String.format("%d", fu) + " " + String.format("%d", fd) + " " + String.format("%d", vt)
+
 //        azimuth = 0f
         if (azimuth_raw > 50) {
             azimuth_raw -= 50
