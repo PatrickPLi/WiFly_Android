@@ -1,29 +1,33 @@
 package com.example.joystick
 
 import android.content.Context
-import android.hardware.*
+import android.content.pm.ActivityInfo
+import android.hardware.Sensor
+import android.hardware.SensorEvent
+import android.hardware.SensorEventListener
+import android.hardware.SensorManager
 import android.hardware.SensorManager.getOrientation
 import android.hardware.SensorManager.getRotationMatrix
 import android.os.Bundle
 import android.util.Log
-import com.google.android.material.floatingactionbutton.FloatingActionButton
-import com.google.android.material.snackbar.Snackbar
-import androidx.appcompat.app.AppCompatActivity
+import android.view.Display
 import android.view.Menu
 import android.view.MenuItem
+import android.view.WindowManager
 import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.graphics.rotationMatrix
-import kotlinx.android.synthetic.main.fragment_first.*
-import java.lang.System.currentTimeMillis
-import kotlin.system.measureTimeMillis
-
 import com.example.joystick.mqtt.MqttClientHelper
+import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.google.android.material.snackbar.Snackbar
+import kotlinx.android.synthetic.main.fragment_first.*
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken
 import org.eclipse.paho.client.mqttv3.MqttCallbackExtended
 import org.eclipse.paho.client.mqttv3.MqttException
 import org.eclipse.paho.client.mqttv3.MqttMessage
 import java.util.*
 import kotlin.concurrent.schedule
+
 
 class MainActivity : AppCompatActivity(), SensorEventListener {
 
@@ -44,6 +48,9 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     var roll_adj = 0.0f
     var pitch_adj = 0.0f
 
+    // System display. Need this for determining rotation.
+    private var mDisplay: Display? = null
+
     private val mqttClient by lazy {
         MqttClientHelper(this)
     }
@@ -62,6 +69,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        setRequestedOrientation (ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
         setContentView(R.layout.activity_main)
         setSupportActionBar(findViewById(R.id.toolbar))
 
@@ -78,6 +86,9 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         }
 
         sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
+
+        val wm = getSystemService(Context.WINDOW_SERVICE) as WindowManager
+        mDisplay = wm.defaultDisplay
     }
 
     private fun setMqttCallBack() {
@@ -128,6 +139,10 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         val rMat = FloatArray(9)
 
         getRotationMatrix(rMat, null, event.values, gmf)
+        val rotationMatrixAdjusted = FloatArray(9)
+        SensorManager.remapCoordinateSystem(rMat,
+            SensorManager.AXIS_MINUS_Y, SensorManager.AXIS_X,
+            rotationMatrixAdjusted);
         getOrientation(rMat, ori)
 
         azimuth = ori[0]
@@ -138,35 +153,36 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         pitch = (pitch * 180/Math.PI).toFloat()
         roll = (roll * 180/Math.PI).toFloat()
 
-        roll = (-1 * roll).toFloat()
-        pitch = (pitch + 90).toFloat()
+        var adjusted_azimuth = azimuth - azimuth_adj
+        var adjusted_roll = roll - roll_adj
+        var adjusted_pitch = pitch - pitch_adj
 
-        azimuth = azimuth - azimuth_adj
-        roll = roll - roll_adj
-        pitch = pitch - pitch_adj
+        adjusted_roll = (-1 * roll).toFloat()
+//        adjusted_pitch = (pitch + 90).toFloat()
 
-        if (azimuth >= 90)
+
+        if (adjusted_azimuth >= 45)
         {
-            azimuth = 89.99f
+            adjusted_azimuth = 44.99f
         }
-        else if (azimuth <= -90) {
-            azimuth = -89.99f
-        }
-
-        if (roll >= 90)
-        {
-            roll = 89.99f
-        }
-        else if (roll <= -90) {
-            roll = -89.99f
+        else if (adjusted_azimuth <= -45) {
+            adjusted_azimuth = -44.99f
         }
 
-        if (pitch >= 90)
+        if (adjusted_roll >= 45)
         {
-            pitch = 89.99f
+            adjusted_roll = 44.99f
         }
-        else if (pitch <= -90) {
-            pitch = 89.99f
+        else if (adjusted_roll <= -45) {
+            adjusted_roll = -44.99f
+        }
+
+        if (adjusted_pitch >= 45)
+        {
+            adjusted_pitch = 44.99f
+        }
+        else if (adjusted_pitch <= -45) {
+            adjusted_pitch = -44.99f
         }
 
 //        azimuth = azimuth + alpha * (azimuth_old - azimuth)
@@ -179,11 +195,11 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
 
 
-        xAxis.text = "X Value: ".plus(roll.toString())
-        yAxis.text = "Y Value: ".plus(pitch.toString())
-        zAxis.text = "Z Value: ".plus(azimuth.toString())
+        xAxis.text = "X Value: ".plus(adjusted_roll.toString())
+        yAxis.text = "Y Value: ".plus(adjusted_pitch.toString())
+        zAxis.text = "Z Value: ".plus(adjusted_azimuth.toString())
 
-        var msg_string = String.format("%.2f", roll) + " " + String.format("%.2f", pitch) + " " + String.format("%.2f", azimuth)
+        var msg_string = String.format("%.2f", adjusted_roll) + " " + String.format("%.2f", adjusted_pitch) + " " + String.format("%.2f", adjusted_azimuth)
 
         try {
             mqttClient.publish("joystick_axis", msg_string)
