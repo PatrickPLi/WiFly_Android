@@ -101,6 +101,8 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         }
 
         sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
+        sensorManager!!.registerListener(this, sensorManager!!.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD), 1000000)
+        sensorManager!!.registerListener(this, sensorManager!!.getDefaultSensor(Sensor.TYPE_ACCELEROMETER), 300000)
 
         val wm = getSystemService(Context.WINDOW_SERVICE) as WindowManager
         mDisplay = wm.defaultDisplay
@@ -377,8 +379,8 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     }
     override fun onResume() {
         super.onResume()
-        sensorManager!!.registerListener(this, sensorManager!!.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD), SensorManager.SENSOR_DELAY_NORMAL)
-        sensorManager!!.registerListener(this, sensorManager!!.getDefaultSensor(Sensor.TYPE_ACCELEROMETER), 400000)
+        sensorManager!!.registerListener(this, sensorManager!!.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD), 1000000)
+        sensorManager!!.registerListener(this, sensorManager!!.getDefaultSensor(Sensor.TYPE_ACCELEROMETER), 300000)
     }
 
     override fun onPause() {
