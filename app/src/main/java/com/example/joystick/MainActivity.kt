@@ -36,8 +36,10 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     var azimuth = 0.0f
     var roll = 0.0f
     var pitch = 0.0f
+
+    var buttons = 2 //initially 2 to represent gear down position 0000 0000 0000 0010
     var brake = 0
-    var gear = 0
+    var gear = 1
 
     var fu = 0
     var fd = 0
@@ -58,6 +60,14 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     var msg_string = "0 0 0"
 
     var start = false
+
+    //Button bit positions
+    val BRAKE = 0
+    val GEAR_UP = 1
+    val GEAR_DOWN = 2
+    val FLAPS_UP = 3
+    val FLAPS_DOWN = 4
+    val TOGGLE_VIEW = 5
 
     // System display. Need this for determining rotation.
     private var mDisplay: Display? = null
@@ -118,8 +128,8 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                     .setAction("Action", null).show()
                 start = true
                 try {
-                    mqttClient.subscribe("btnRecv")
-                    "Subscribed to topic btnRecv"
+//                    mqttClient.subscribe("btnRecv")
+//                    "Subscribed to topic btnRecv"
                 } catch (ex: MqttException) {
                     "Error subscribing to topic: btnRecv"
                 }
@@ -127,9 +137,9 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
             override fun messageArrived(topic: String?, message: MqttMessage?) {
                 Log.w("Debug", "Message arrived")
-                vt = 0
-                fu = 0
-                fd = 0
+//                vt = 0
+//                fu = 0
+//                fd = 0
             }
 
             override fun connectionLost(throwable: Throwable) {
@@ -150,13 +160,17 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         val v = (getSystemService(Context.VIBRATOR_SERVICE) as Vibrator)
         v.vibrate(VibrationEffect.createOneShot(vib_len,
             VibrationEffect.DEFAULT_AMPLITUDE))
-        if (gear == 1)
+        if (gear == 1) //GEAR_DOWN
         {
             gear_btn.setBackgroundColor(Color.RED)
+            buttons = buttons or (1 shl GEAR_DOWN) //set GEAR_DOWN bit to 1
+            buttons = buttons and (1 shl GEAR_UP).inv() //set GEAR_UP bit to 0
         }
-        else
+        else //GEAR_UP
         {
             gear_btn.setBackgroundColor(Color.GREEN)
+            buttons = buttons or (1 shl GEAR_UP) //set GEAR_UP bit to 1
+            buttons = buttons and (1 shl GEAR_DOWN).inv() //set GEAR_DOWN bit to 0
         }
     }
 
@@ -164,21 +178,24 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         val v = (getSystemService(Context.VIBRATOR_SERVICE) as Vibrator)
         v.vibrate(VibrationEffect.createOneShot(vib_len,
             VibrationEffect.DEFAULT_AMPLITUDE))
-        fu = 1
+        fu = fu xor 1
+        buttons = buttons xor (1 shl FLAPS_UP)
     }
 
     fun flaps_down(view: View) {
         val v = (getSystemService(Context.VIBRATOR_SERVICE) as Vibrator)
         v.vibrate(VibrationEffect.createOneShot(vib_len,
             VibrationEffect.DEFAULT_AMPLITUDE))
-        fd = 1
+        fd = fd xor 1
+        buttons = buttons xor (1 shl FLAPS_DOWN)
     }
 
     fun toggle_view(view: View) {
         val v = (getSystemService(Context.VIBRATOR_SERVICE) as Vibrator)
         v.vibrate(VibrationEffect.createOneShot(vib_len,
             VibrationEffect.DEFAULT_AMPLITUDE))
-        vt = 1
+        vt = vt xor 1
+        buttons = buttons xor (1 shl TOGGLE_VIEW)
     }
 
     fun toggle_brake(view: View) {
@@ -186,10 +203,12 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         if (brake == 1)
         {
             brake_btn.setBackgroundColor(Color.RED)
+            buttons = buttons or (1 shl BRAKE)
         }
         else
         {
             brake_btn.setBackgroundColor(Color.WHITE)
+            buttons = buttons and (1 shl BRAKE).inv()
         }
         val v = (getSystemService(Context.VIBRATOR_SERVICE) as Vibrator)
         v.vibrate(VibrationEffect.createOneShot(vib_len,
@@ -307,7 +326,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         zAxis.text = "Yaw: ".plus(String.format("%.2f", adjusted_azimuth))
         throttleAxis.text = "Throttle: ".plus(throttle_raw)
 
-        msg_string = String.format("%.2f", adjusted_roll) + " " + String.format("%.2f", adjusted_pitch) + " " + String.format("%.2f", adjusted_azimuth) + " " + String.format("%.2f", adjusted_throttle) + " " + String.format("%d", gear) + " " + String.format("%d", brake) + " " + String.format("%d", fu) + " " + String.format("%d", fd) + " " + String.format("%d", vt)
+        msg_string = String.format("%.2f", adjusted_roll) + " " + String.format("%.2f", adjusted_pitch) + " " + String.format("%.2f", adjusted_azimuth) + " " + String.format("%.2f", adjusted_throttle) + " " + String.format("%d", buttons)
 
 //        azimuth = 0f
         if (azimuth_raw > 50) {
