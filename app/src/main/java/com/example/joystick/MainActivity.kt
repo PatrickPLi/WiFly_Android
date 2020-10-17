@@ -102,7 +102,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
         sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
         sensorManager!!.registerListener(this, sensorManager!!.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD), 1000000)
-        sensorManager!!.registerListener(this, sensorManager!!.getDefaultSensor(Sensor.TYPE_ACCELEROMETER), 300000)
+        sensorManager!!.registerListener(this, sensorManager!!.getDefaultSensor(Sensor.TYPE_ACCELEROMETER), 20000)
 
         val wm = getSystemService(Context.WINDOW_SERVICE) as WindowManager
         mDisplay = wm.defaultDisplay
@@ -323,9 +323,9 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
 
 
-        xAxis.text = "Roll: ".plus(String.format("%.2f", adjusted_roll))
-        yAxis.text = "Pitch: ".plus(String.format("%.2f", adjusted_pitch))
-        zAxis.text = "Yaw: ".plus(String.format("%.2f", adjusted_azimuth))
+        xAxis.text = "Roll: ".plus(String.format("%.0f", adjusted_roll))
+        yAxis.text = "Pitch: ".plus(String.format("%.0f", adjusted_pitch))
+        zAxis.text = "Yaw: ".plus(String.format("%.0f", adjusted_azimuth))
         throttleAxis.text = "Throttle: ".plus(throttle_raw)
 
         msg_string = String.format("%.2f", adjusted_roll) + " " + String.format("%.2f", adjusted_pitch) + " " + String.format("%.2f", adjusted_azimuth) + " " + String.format("%.2f", adjusted_throttle) + " " + String.format("%d", buttons)
@@ -380,7 +380,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     override fun onResume() {
         super.onResume()
         sensorManager!!.registerListener(this, sensorManager!!.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD), 1000000)
-        sensorManager!!.registerListener(this, sensorManager!!.getDefaultSensor(Sensor.TYPE_ACCELEROMETER), 300000)
+        sensorManager!!.registerListener(this, sensorManager!!.getDefaultSensor(Sensor.TYPE_ACCELEROMETER), 20000)
     }
 
     override fun onPause() {
