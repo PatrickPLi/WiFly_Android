@@ -14,8 +14,12 @@ import android.os.VibrationEffect
 import android.os.Vibrator
 import android.util.Log
 import android.view.*
+import android.widget.SeekBar
+import android.widget.TextView
 import android.widget.Toast
+
 import androidx.appcompat.app.AppCompatActivity
+import androidx.navigation.findNavController
 import com.example.joystick.mqtt.MqttClientHelper
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.snackbar.Snackbar
@@ -24,6 +28,7 @@ import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken
 import org.eclipse.paho.client.mqttv3.MqttCallbackExtended
 import org.eclipse.paho.client.mqttv3.MqttException
 import org.eclipse.paho.client.mqttv3.MqttMessage
+import org.w3c.dom.Text
 import java.util.*
 import kotlin.concurrent.schedule
 
@@ -44,6 +49,13 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     var fu = 0
     var fd = 0
     var vt = 0
+
+    var xAxis : TextView? = null
+    var yAxis : TextView? = null
+    var zAxis : TextView? = null
+    var throttleAxis : TextView? = null
+    var rudderSeek : SeekBar? = null
+    var throttleSeek: SeekBar? = null
 
 
     val vib_len = 100L
@@ -216,6 +228,9 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         v.vibrate(VibrationEffect.createOneShot(vib_len,
             VibrationEffect.DEFAULT_AMPLITUDE))
     }
+
+
+
     private fun zeroAxis() {
         azimuth_adj = azimuth
         pitch_adj = pitch
@@ -234,11 +249,19 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         val yVal = event.values[1]
         val zVal = event.values[2]
 
-//        var yaw_seek = findViewById<SeekBar>(R.id.rudder)
-        var azimuth_raw = rudderSeek.getProgress()
+        rudderSeek = findViewById<SeekBar>(R.id.rudderSeek)
+        var azimuth_raw = 0
+        var throttle_raw = 0
+        if (rudderSeek != null)
+        {
+            azimuth_raw = rudderSeek!!.getProgress()
+        }
 
-//        var throttle_seek = findViewById<SeekBar>(R.id.throttle)
-        var throttle_raw = throttleSeek.getProgress()
+        throttleSeek = findViewById<SeekBar>(R.id.throttleSeek)
+        if (throttleSeek != null)
+        {
+            throttle_raw = throttleSeek!!.getProgress()
+        }
 
         val ori = FloatArray(3)
         val rMat = FloatArray(9)
@@ -321,12 +344,15 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 //        roll_old = roll
 //        pitch_old = pitch
 
+        xAxis = findViewById(R.id.xAxis)
+        yAxis = findViewById(R.id.yAxis)
+        zAxis = findViewById(R.id.zAxis)
+        throttleAxis = findViewById(R.id.throttleAxis)
 
-
-        xAxis.text = "Roll: ".plus(String.format("%.0f", adjusted_roll))
-        yAxis.text = "Pitch: ".plus(String.format("%.0f", adjusted_pitch))
-        zAxis.text = "Yaw: ".plus(String.format("%.0f", adjusted_azimuth))
-        throttleAxis.text = "Throttle: ".plus(throttle_raw)
+        xAxis?.text = "Roll: ".plus(String.format("%.0f", adjusted_roll))
+        yAxis?.text = "Pitch: ".plus(String.format("%.0f", adjusted_pitch))
+        zAxis?.text = "Yaw: ".plus(String.format("%.0f", adjusted_azimuth))
+        throttleAxis?.text = "Throttle: ".plus(throttle_raw)
 
         msg_string = String.format("%.2f", adjusted_roll) + " " + String.format("%.2f", adjusted_pitch) + " " + String.format("%.2f", adjusted_azimuth) + " " + String.format("%.2f", adjusted_throttle) + " " + String.format("%d", buttons)
 
@@ -341,7 +367,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             azimuth_raw /= 2
             azimuth_raw = 50 - azimuth_raw
         }
-        rudderSeek.setProgress(azimuth_raw)
+        rudderSeek?.setProgress(azimuth_raw)
 
         try {
             mqttClient.publish("joystick_axis", msg_string)
@@ -381,6 +407,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         super.onResume()
         sensorManager!!.registerListener(this, sensorManager!!.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD), 1000000)
         sensorManager!!.registerListener(this, sensorManager!!.getDefaultSensor(Sensor.TYPE_ACCELEROMETER), 20000)
+//        setContentView(R.layout.activity_main)
     }
 
     override fun onPause() {
