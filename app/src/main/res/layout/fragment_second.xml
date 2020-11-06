@@ -2,6 +2,7 @@
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/lo_data_rate"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".SecondFragment">
@@ -24,4 +25,55 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/textview_second" />
+
+    <SeekBar
+        android:id="@+id/range_of_motion_slider"
+        style="@style/Widget.AppCompat.SeekBar.Discrete"
+        android:layout_width="189dp"
+        android:layout_height="101dp"
+        android:max="4"
+        android:progress="2"
+        app:layout_constraintBottom_toTopOf="@+id/inputSmoothing"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.04"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.68" />
+
+    <TextView
+        android:id="@+id/rangeOfMotion"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Range of Motion: 90"
+        app:layout_constraintBottom_toTopOf="@+id/range_of_motion_slider"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.047"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.963" />
+
+    <Switch
+        android:id="@+id/inputSmoothing"
+        android:layout_width="wrap_content"
+        android:layout_height="102dp"
+        android:text="Input Smoothing"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.06"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.86" />
+
+    <Switch
+        android:id="@+id/datarate_switch"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="10/50 Hz Datarate"
+        android:onClick="toggle_datarate"
+        app:layout_constraintBottom_toTopOf="@+id/rangeOfMotion"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.05"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>

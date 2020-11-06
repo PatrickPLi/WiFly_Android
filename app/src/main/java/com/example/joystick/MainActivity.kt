@@ -15,6 +15,7 @@ import android.os.Vibrator
 import android.util.Log
 import android.view.*
 import android.widget.SeekBar
+import android.widget.Switch
 import android.widget.TextView
 import android.widget.Toast
 
@@ -35,14 +36,18 @@ import kotlin.concurrent.schedule
 
 class MainActivity : AppCompatActivity(), SensorEventListener {
 
+    var DEFAULT_DATA_RATE = 1000000
+    var DATA_RATE = DEFAULT_DATA_RATE
+
     private var sensorManager: SensorManager? = null
     var gmf = FloatArray(3)
 
+    var azimuth_raw = 0
     var azimuth = 0.0f
     var roll = 0.0f
     var pitch = 0.0f
 
-    var buttons = 2 //initially 2 to represent gear down position 0000 0000 0000 0010
+    var buttons = 4 //initially 4 to represent gear down position 0000 0000 0000 0100
     var brake = 0
     var gear = 1
 
@@ -80,6 +85,13 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     val FLAPS_UP = 3
     val FLAPS_DOWN = 4
     val TOGGLE_VIEW = 5
+    val LOOK_UP = 6
+    val LOOK_LEFT = 7
+    val LOOK_BACK = 8
+    val LOOK_RIGHT = 9
+    val RESET_VIEW = 10
+    val RUDDER_LEFT = 11
+    val RUDDER_RIGHT = 12
 
     // System display. Need this for determining rotation.
     private var mDisplay: Display? = null
@@ -114,7 +126,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
         sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
         sensorManager!!.registerListener(this, sensorManager!!.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD), 1000000)
-        sensorManager!!.registerListener(this, sensorManager!!.getDefaultSensor(Sensor.TYPE_ACCELEROMETER), 20000)
+        sensorManager!!.registerListener(this, sensorManager!!.getDefaultSensor(Sensor.TYPE_ACCELEROMETER), DATA_RATE)
 
         val wm = getSystemService(Context.WINDOW_SERVICE) as WindowManager
         mDisplay = wm.defaultDisplay
@@ -169,6 +181,34 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         })
     }
 
+    fun rud_left(view: View) {
+        val v = (getSystemService(Context.VIBRATOR_SERVICE) as Vibrator)
+//        v.vibrate(VibrationEffect.createOneShot(vib_len,
+//            VibrationEffect.DEFAULT_AMPLITUDE))
+        buttons = buttons xor (1 shl RUDDER_LEFT)
+    }
+    fun rud_right(view: View) {
+        val v = (getSystemService(Context.VIBRATOR_SERVICE) as Vibrator)
+//        v.vibrate(VibrationEffect.createOneShot(vib_len,
+//            VibrationEffect.DEFAULT_AMPLITUDE))
+        buttons = buttons xor (1 shl RUDDER_RIGHT)
+    }
+
+    fun toggle_datarate(view: View) {
+        if (DATA_RATE == DEFAULT_DATA_RATE)
+        {
+            DATA_RATE = 15000
+            Toast.makeText(this, "Set data rate to fast", Toast.LENGTH_SHORT).show()
+        }
+        else
+        {
+            DATA_RATE = DEFAULT_DATA_RATE
+            Toast.makeText(this, "Set data rate to slows", Toast.LENGTH_SHORT).show()
+        }
+        sensorManager!!.unregisterListener(this, sensorManager!!.getDefaultSensor(Sensor.TYPE_ACCELEROMETER))
+        sensorManager!!.registerListener(this, sensorManager!!.getDefaultSensor(Sensor.TYPE_ACCELEROMETER), DATA_RATE)
+    }
+
     fun press_gear(view: View) {
         gear = gear xor 1
         val v = (getSystemService(Context.VIBRATOR_SERVICE) as Vibrator)
@@ -176,13 +216,13 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             VibrationEffect.DEFAULT_AMPLITUDE))
         if (gear == 1) //GEAR_DOWN
         {
-            gear_btn.setBackgroundColor(Color.RED)
+            gear_btn.setBackgroundColor(Color.GREEN)
             buttons = buttons or (1 shl GEAR_DOWN) //set GEAR_DOWN bit to 1
             buttons = buttons and (1 shl GEAR_UP).inv() //set GEAR_UP bit to 0
         }
         else //GEAR_UP
         {
-            gear_btn.setBackgroundColor(Color.GREEN)
+            gear_btn.setBackgroundColor(Color.RED)
             buttons = buttons or (1 shl GEAR_UP) //set GEAR_UP bit to 1
             buttons = buttons and (1 shl GEAR_DOWN).inv() //set GEAR_DOWN bit to 0
         }
@@ -210,6 +250,29 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             VibrationEffect.DEFAULT_AMPLITUDE))
         vt = vt xor 1
         buttons = buttons xor (1 shl TOGGLE_VIEW)
+    }
+
+    fun reset_view(view: View) {
+        val v = (getSystemService(Context.VIBRATOR_SERVICE) as Vibrator)
+        v.vibrate(VibrationEffect.createOneShot(vib_len,
+            VibrationEffect.DEFAULT_AMPLITUDE))
+        buttons = buttons xor (1 shl RESET_VIEW)
+    }
+
+    fun look_up(view: View) {
+        buttons = buttons xor (1 shl LOOK_UP)
+    }
+
+    fun look_left(view: View) {
+        buttons = buttons xor (1 shl LOOK_LEFT)
+    }
+
+    fun look_back(view: View) {
+        buttons = buttons xor (1 shl LOOK_BACK)
+    }
+
+    fun look_right(view: View) {
+        buttons = buttons xor (1 shl LOOK_RIGHT)
     }
 
     fun toggle_brake(view: View) {
@@ -250,12 +313,12 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         val zVal = event.values[2]
 
         rudderSeek = findViewById<SeekBar>(R.id.rudderSeek)
-        var azimuth_raw = 0
+//        var azimuth_raw = 0
         var throttle_raw = 0
-        if (rudderSeek != null)
-        {
-            azimuth_raw = rudderSeek!!.getProgress()
-        }
+//        if (rudderSeek != null)
+//        {
+//            azimuth_raw = rudderSeek!!.getProgress()
+//        }
 
         throttleSeek = findViewById<SeekBar>(R.id.throttleSeek)
         if (throttleSeek != null)
@@ -356,15 +419,15 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
         msg_string = String.format("%.2f", adjusted_roll) + " " + String.format("%.2f", adjusted_pitch) + " " + String.format("%.2f", adjusted_azimuth) + " " + String.format("%.2f", adjusted_throttle) + " " + String.format("%d", buttons)
 
-//        azimuth = 0f
+        azimuth = 0f
         if (azimuth_raw > 50) {
             azimuth_raw -= 50
-            azimuth_raw /=2
+            azimuth_raw /= 1024
             azimuth_raw += 50
         }
         else {
             azimuth_raw = 50 - azimuth_raw
-            azimuth_raw /= 2
+            azimuth_raw /= 1024
             azimuth_raw = 50 - azimuth_raw
         }
         rudderSeek?.setProgress(azimuth_raw)
@@ -406,7 +469,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     override fun onResume() {
         super.onResume()
         sensorManager!!.registerListener(this, sensorManager!!.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD), 1000000)
-        sensorManager!!.registerListener(this, sensorManager!!.getDefaultSensor(Sensor.TYPE_ACCELEROMETER), 20000)
+        sensorManager!!.registerListener(this, sensorManager!!.getDefaultSensor(Sensor.TYPE_ACCELEROMETER), DATA_RATE)
 //        setContentView(R.layout.activity_main)
     }
 

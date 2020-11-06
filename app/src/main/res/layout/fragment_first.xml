@@ -8,6 +8,45 @@
     tools:context=".FirstFragment">
 
     <Button
+        android:id="@+id/flapsUp3"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:onClick="flaps_up"
+        android:text="Flaps Up"
+        app:layout_constraintBottom_toTopOf="@+id/flapsDown"
+        app:layout_constraintEnd_toStartOf="@+id/throttleSeek"
+        app:layout_constraintStart_toEndOf="@+id/rudderSeek"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="1.0" />
+
+    <Button
+        android:id="@+id/rud_left_btn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:onClick="rud_left"
+        android:text="rud_left"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/flapsDown"
+        app:layout_constraintStart_toEndOf="@+id/rudderSeek"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.939" />
+
+    <Button
+        android:id="@+id/reset_view_btn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="1dp"
+        android:background="@android:color/white"
+        android:onClick="reset_view"
+        android:text="Reset View"
+        app:layout_constraintBottom_toTopOf="@+id/view_btn"
+        app:layout_constraintEnd_toStartOf="@+id/gear_btn"
+        app:layout_constraintHorizontal_bias="0.18"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.9" />
+
+    <Button
         android:id="@+id/brake_btn"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -61,8 +100,10 @@
         android:onClick="toggle_view"
         android:text="Toggle View"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        tools:layout_editor_absoluteX="125dp" />
+        app:layout_constraintEnd_toStartOf="@+id/gear_btn"
+        app:layout_constraintHorizontal_bias="0.18"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
     <Button
         android:id="@+id/gear_btn"
@@ -115,13 +156,14 @@
         android:id="@+id/flapsUp"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Flaps Up"
-        android:onClick="flaps_up"
-        app:layout_constraintBottom_toTopOf="@+id/flapsDown"
+        android:onClick="rud_right"
+        android:text="RUD_RIGHT"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toStartOf="@+id/throttleSeek"
-        app:layout_constraintStart_toEndOf="@+id/rudderSeek"
+        app:layout_constraintHorizontal_bias="0.73"
+        app:layout_constraintStart_toEndOf="@+id/rud_left_btn"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="1.0" />
+        app:layout_constraintVertical_bias="0.95" />
 
     <Button
         android:id="@+id/flapsDown"
@@ -148,5 +190,57 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.0"
         app:srcCompat="@android:drawable/ic_menu_rotate" />
+
+    <Button
+        android:id="@+id/lookUp"
+        android:layout_width="49dp"
+        android:layout_height="71dp"
+        android:layout_marginTop="3dp"
+        android:onClick="look_up"
+        android:text="Up"
+        app:layout_constraintBottom_toTopOf="@+id/lookDown"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <Button
+        android:id="@+id/lookLeft"
+        android:layout_width="70dp"
+        android:layout_height="45dp"
+        android:onClick="look_left"
+        android:text="Left"
+        app:layout_constraintBottom_toTopOf="@+id/flapsUp"
+        app:layout_constraintEnd_toStartOf="@+id/lookDown"
+        app:layout_constraintHorizontal_bias="1.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.29000002" />
+
+    <Button
+        android:id="@+id/lookRight"
+        android:layout_width="70dp"
+        android:layout_height="45dp"
+        android:onClick="look_right"
+        android:text="Right"
+        app:layout_constraintBottom_toTopOf="@+id/flapsUp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toEndOf="@+id/lookDown"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.29000002" />
+
+    <Button
+        android:id="@+id/lookDown"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:onClick="look_back"
+        android:text="Back"
+        app:layout_constraintBottom_toTopOf="@+id/flapsUp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toEndOf="@+id/lookLeft"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.47000003" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
