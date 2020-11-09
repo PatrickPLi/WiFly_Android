@@ -8,38 +8,36 @@
     tools:context=".FirstFragment">
 
     <Button
-        android:id="@+id/flapsUp3"
+        android:id="@+id/flapsUp"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:onClick="flaps_up"
         android:text="Flaps Up"
-        app:layout_constraintBottom_toTopOf="@+id/flapsDown"
-        app:layout_constraintEnd_toStartOf="@+id/throttleSeek"
-        app:layout_constraintStart_toEndOf="@+id/rudderSeek"
+        app:layout_constraintBottom_toTopOf="@+id/throttleSeek"
+        app:layout_constraintEnd_toEndOf="@+id/throttleSeek"
+        app:layout_constraintStart_toStartOf="@+id/throttleSeek"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="1.0" />
 
     <Button
-        android:id="@+id/rud_left_btn"
+        android:id="@+id/rudderLeft"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:onClick="rud_left"
+        android:layout_marginStart="16dp"
         android:text="rud_left"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toStartOf="@+id/flapsDown"
-        app:layout_constraintStart_toEndOf="@+id/rudderSeek"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.939" />
 
     <Button
-        android:id="@+id/reset_view_btn"
+        android:id="@+id/resetView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginBottom="1dp"
-        android:background="@android:color/white"
-        android:onClick="reset_view"
         android:text="Reset View"
-        app:layout_constraintBottom_toTopOf="@+id/view_btn"
+        app:layout_constraintBottom_toTopOf="@+id/toggleView"
         app:layout_constraintEnd_toStartOf="@+id/gear_btn"
         app:layout_constraintHorizontal_bias="0.18"
         app:layout_constraintStart_toStartOf="parent"
@@ -67,7 +65,7 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toStartOf="@+id/gear_btn"
         app:layout_constraintHorizontal_bias="0.2"
-        app:layout_constraintStart_toEndOf="@+id/view_btn"
+        app:layout_constraintStart_toEndOf="@+id/toggleView"
         app:layout_constraintTop_toTopOf="parent" />
 
     <TextView
@@ -81,29 +79,17 @@
         app:layout_constraintStart_toEndOf="@+id/xAxis"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <TextView
-        android:id="@+id/zAxis"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Rudder"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@+id/throttleAxis"
-        app:layout_constraintHorizontal_bias="0.0"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/rudderSeek" />
-
     <Button
-        android:id="@+id/view_btn"
+        android:id="@+id/toggleView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:background="@android:color/white"
-        android:onClick="toggle_view"
         android:text="Toggle View"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/flapsUp"
         app:layout_constraintEnd_toStartOf="@+id/gear_btn"
         app:layout_constraintHorizontal_bias="0.18"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.86" />
 
     <Button
         android:id="@+id/gear_btn"
@@ -119,20 +105,6 @@
         app:layout_constraintVertical_bias="0.498" />
 
     <SeekBar
-        android:id="@+id/rudderSeek"
-        android:layout_width="125dp"
-        android:layout_height="22dp"
-        android:progress="50"
-        android:scaleX="2"
-        android:scaleY="2"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@+id/throttleSeek"
-        app:layout_constraintHorizontal_bias="0.0"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/yAxis"
-        app:layout_constraintVertical_bias="0.503" />
-
-    <SeekBar
         android:id="@+id/throttleSeek"
         android:layout_width="125dp"
         android:layout_height="22dp"
@@ -141,41 +113,42 @@
         android:scaleY="2"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/yAxis" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/yAxis"
+        app:layout_constraintVertical_bias="0.45" />
 
     <TextView
         android:id="@+id/throttleAxis"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginEnd="196dp"
         android:text="Throttle"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/throttleSeek" />
+        app:layout_constraintTop_toBottomOf="@+id/throttleSeek"
+        app:layout_constraintVertical_bias="0.216" />
 
     <Button
-        android:id="@+id/flapsUp"
+        android:id="@+id/rudderRight"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:onClick="rud_right"
+        android:layout_marginEnd="16dp"
         android:text="RUD_RIGHT"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@+id/throttleSeek"
-        app:layout_constraintHorizontal_bias="0.73"
-        app:layout_constraintStart_toEndOf="@+id/rud_left_btn"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.95" />
+        app:layout_constraintVertical_bias="0.939" />
 
     <Button
         android:id="@+id/flapsDown"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:onClick="flaps_down"
+        android:layout_marginTop="8dp"
         android:text="Flaps Down"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@+id/throttleSeek"
-        app:layout_constraintStart_toEndOf="@+id/rudderSeek"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="1.0" />
+        app:layout_constraintEnd_toEndOf="@+id/throttleSeek"
+        app:layout_constraintStart_toStartOf="@+id/throttleSeek"
+        app:layout_constraintTop_toBottomOf="@+id/throttleSeek" />
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/settings_fab"
@@ -184,7 +157,7 @@
         android:layout_gravity="center|top|left"
         android:layout_margin="@dimen/fab_margin"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@+id/view_btn"
+        app:layout_constraintEnd_toStartOf="@+id/toggleView"
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
@@ -196,7 +169,6 @@
         android:layout_width="49dp"
         android:layout_height="71dp"
         android:layout_marginTop="3dp"
-        android:onClick="look_up"
         android:text="Up"
         app:layout_constraintBottom_toTopOf="@+id/lookDown"
         app:layout_constraintEnd_toEndOf="parent"
@@ -207,9 +179,8 @@
         android:id="@+id/lookLeft"
         android:layout_width="70dp"
         android:layout_height="45dp"
-        android:onClick="look_left"
         android:text="Left"
-        app:layout_constraintBottom_toTopOf="@+id/flapsUp"
+        app:layout_constraintBottom_toTopOf="@+id/rudderRight"
         app:layout_constraintEnd_toStartOf="@+id/lookDown"
         app:layout_constraintHorizontal_bias="1.0"
         app:layout_constraintStart_toStartOf="parent"
@@ -220,9 +191,8 @@
         android:id="@+id/lookRight"
         android:layout_width="70dp"
         android:layout_height="45dp"
-        android:onClick="look_right"
         android:text="Right"
-        app:layout_constraintBottom_toTopOf="@+id/flapsUp"
+        app:layout_constraintBottom_toTopOf="@+id/rudderRight"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toEndOf="@+id/lookDown"
@@ -233,9 +203,8 @@
         android:id="@+id/lookDown"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:onClick="look_back"
         android:text="Back"
-        app:layout_constraintBottom_toTopOf="@+id/flapsUp"
+        app:layout_constraintBottom_toTopOf="@+id/rudderRight"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toEndOf="@+id/lookLeft"

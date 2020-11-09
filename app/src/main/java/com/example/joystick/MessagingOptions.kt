@@ -10,9 +10,9 @@ package com.example.joystick
 
 const val SOLACE_CLIENT_USER_NAME = "solace-cloud-client"
 
-const val SOLACE_CLIENT_PASSWORD = "p2i7li6ckbaimoe0draq0qdl82"
+const val SOLACE_CLIENT_PASSWORD = "drb1028k33tvifvdfpqgpca19o"
 
-const val SOLACE_MQTT_HOST = "tcp://mrzpfs1b9tj1n.messaging.solace.cloud:20550"
+const val SOLACE_MQTT_HOST = "tcp://192.168.0.28:1883"
 
 
 // Other options

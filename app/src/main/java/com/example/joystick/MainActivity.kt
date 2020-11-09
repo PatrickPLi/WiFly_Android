@@ -1,5 +1,6 @@
 package com.example.joystick
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.ActivityInfo
 import android.graphics.Color
@@ -14,13 +15,11 @@ import android.os.VibrationEffect
 import android.os.Vibrator
 import android.util.Log
 import android.view.*
+import android.widget.Button
 import android.widget.SeekBar
-import android.widget.Switch
 import android.widget.TextView
 import android.widget.Toast
-
 import androidx.appcompat.app.AppCompatActivity
-import androidx.navigation.findNavController
 import com.example.joystick.mqtt.MqttClientHelper
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.snackbar.Snackbar
@@ -29,15 +28,17 @@ import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken
 import org.eclipse.paho.client.mqttv3.MqttCallbackExtended
 import org.eclipse.paho.client.mqttv3.MqttException
 import org.eclipse.paho.client.mqttv3.MqttMessage
-import org.w3c.dom.Text
 import java.util.*
 import kotlin.concurrent.schedule
 
 
 class MainActivity : AppCompatActivity(), SensorEventListener {
 
-    var DEFAULT_DATA_RATE = 1000000
+    var DEFAULT_DATA_RATE = 35000
     var DATA_RATE = DEFAULT_DATA_RATE
+
+    val RELEASE = MotionEvent.ACTION_UP
+    val PRESS = MotionEvent.ACTION_DOWN
 
     private var sensorManager: SensorManager? = null
     var gmf = FloatArray(3)
@@ -61,6 +62,11 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     var throttleAxis : TextView? = null
     var rudderSeek : SeekBar? = null
     var throttleSeek: SeekBar? = null
+
+    var lookUp : Button? = null
+    var lookDown : Button? = null
+    var lookLeft : Button? = null
+    var lookRight : Button? = null
 
 
     val vib_len = 100L
@@ -100,13 +106,130 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         MqttClientHelper(this)
     }
 
+
+
     override fun onAccuracyChanged(s: Sensor?, i: Int) {
+    }
+
+    fun setBit(shift: Int)
+    {
+        buttons = buttons or (1 shl shift)
+    }
+
+    fun clearBit(shift: Int)
+    {
+        buttons = buttons and (1 shl shift).inv()
+    }
+
+    fun vibrate(view: View)
+    {
+        val v = (getSystemService(Context.VIBRATOR_SERVICE) as Vibrator)
+        v.vibrate(
+            VibrationEffect.createOneShot(
+                vib_len,
+                VibrationEffect.DEFAULT_AMPLITUDE
+            )
+        )
+    }
+
+    @SuppressLint("ClickableViewAccessibility")
+    override fun onStart() {
+        super.onStart()
+
+        //FLAPS_UP
+        findViewById<Button>(R.id.flapsUp).setOnTouchListener { v, event ->
+            val action = event.action
+            val bit = FLAPS_UP
+            if(action==RELEASE) clearBit(bit)
+            else if (action==PRESS) setBit(bit)
+            true
+        }
+
+        //FLAPS_DOWN
+        findViewById<Button>(R.id.flapsDown).setOnTouchListener { v, event ->
+            val action = event.action
+            val bit = FLAPS_DOWN
+            if(action==RELEASE) clearBit(bit)
+            else if (action==PRESS) setBit(bit)
+            true
+        }
+
+        //TOGGLE_VIEW
+        findViewById<Button>(R.id.toggleView).setOnTouchListener { v, event ->
+            val action = event.action
+            val bit = TOGGLE_VIEW
+            if(action==RELEASE) clearBit(bit)
+            else if (action==PRESS) setBit(bit)
+            true
+        }
+
+        //RESET_VIEW
+        findViewById<Button>(R.id.resetView).setOnTouchListener { v, event ->
+            val action = event.action
+            val bit = RESET_VIEW
+            if(action==RELEASE) clearBit(bit)
+            else if (action==PRESS) setBit(bit)
+            true
+        }
+
+        //UP
+        findViewById<Button>(R.id.lookUp).setOnTouchListener { v, event ->
+            val action = event.action
+            val bit = LOOK_UP
+            if(action==RELEASE) clearBit(bit)
+            else if (action==PRESS) setBit(bit)
+            true
+        }
+
+        //DOWN
+        findViewById<Button>(R.id.lookDown).setOnTouchListener { v, event ->
+            val action = event.action
+            val bit = LOOK_BACK
+            if(action==RELEASE) clearBit(bit)
+            else if (action==PRESS) setBit(bit)
+            true
+        }
+
+        //LEFT
+        findViewById<Button>(R.id.lookLeft).setOnTouchListener { v, event ->
+            val action = event.action
+            val bit = LOOK_LEFT
+            if(action==RELEASE) clearBit(bit)
+            else if (action==PRESS) setBit(bit)
+            true
+        }
+
+        //RIGHT
+        findViewById<Button>(R.id.lookRight).setOnTouchListener { v, event ->
+            val action = event.action
+            val bit = LOOK_RIGHT
+            if(action==RELEASE) clearBit(bit)
+            else if (action==PRESS) setBit(bit)
+            true
+        }
+
+        //RUDDER_LEFT
+        findViewById<Button>(R.id.rudderLeft).setOnTouchListener { v, event ->
+            val action = event.action
+            val bit = RUDDER_LEFT
+            if(action==RELEASE) clearBit(bit)
+            else if (action==PRESS) setBit(bit)
+            true
+        }
+        //RUDDER_RIGHT
+        findViewById<Button>(R.id.rudderRight).setOnTouchListener { v, event ->
+            val action = event.action
+            val bit = RUDDER_RIGHT
+            if(action==RELEASE) clearBit(bit)
+            else if (action==PRESS) setBit(bit)
+            true
+        }
     }
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setRequestedOrientation (ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
         setContentView(R.layout.activity_main)
         setSupportActionBar(findViewById(R.id.toolbar))
 
@@ -119,14 +242,26 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         setMqttCallBack()
         Timer("CheckMqttConnection", false).schedule(3000) {
             if (!mqttClient.isConnected()) {
-                Snackbar.make(findViewById(android.R.id.content),"Failed to connect to: '$SOLACE_MQTT_HOST' within 3 seconds", Snackbar.LENGTH_INDEFINITE)
+                Snackbar.make(
+                    findViewById(android.R.id.content),
+                    "Failed to connect to: '$SOLACE_MQTT_HOST' within 3 seconds",
+                    Snackbar.LENGTH_INDEFINITE
+                )
                     .setAction("Action", null).show()
             }
         }
 
         sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
-        sensorManager!!.registerListener(this, sensorManager!!.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD), 1000000)
-        sensorManager!!.registerListener(this, sensorManager!!.getDefaultSensor(Sensor.TYPE_ACCELEROMETER), DATA_RATE)
+        sensorManager!!.registerListener(
+            this,
+            sensorManager!!.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD),
+            1000000
+        )
+        sensorManager!!.registerListener(
+            this,
+            sensorManager!!.getDefaultSensor(Sensor.TYPE_ACCELEROMETER),
+            DATA_RATE
+        )
 
         val wm = getSystemService(Context.WINDOW_SERVICE) as WindowManager
         mDisplay = wm.defaultDisplay
@@ -150,7 +285,11 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             override fun connectComplete(b: Boolean, s: String) {
                 val snackbarMsg = "Connected to host:\n'$SOLACE_MQTT_HOST'."
                 Log.w("Debug", snackbarMsg)
-                Snackbar.make(findViewById(android.R.id.content), snackbarMsg, Snackbar.LENGTH_SHORT)
+                Snackbar.make(
+                    findViewById(android.R.id.content),
+                    snackbarMsg,
+                    Snackbar.LENGTH_SHORT
+                )
                     .setAction("Action", null).show()
                 start = true
                 try {
@@ -197,7 +336,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     fun toggle_datarate(view: View) {
         if (DATA_RATE == DEFAULT_DATA_RATE)
         {
-            DATA_RATE = 15000
+            DATA_RATE = 25000
             Toast.makeText(this, "Set data rate to fast", Toast.LENGTH_SHORT).show()
         }
         else
@@ -205,15 +344,26 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             DATA_RATE = DEFAULT_DATA_RATE
             Toast.makeText(this, "Set data rate to slows", Toast.LENGTH_SHORT).show()
         }
-        sensorManager!!.unregisterListener(this, sensorManager!!.getDefaultSensor(Sensor.TYPE_ACCELEROMETER))
-        sensorManager!!.registerListener(this, sensorManager!!.getDefaultSensor(Sensor.TYPE_ACCELEROMETER), DATA_RATE)
+        sensorManager!!.unregisterListener(
+            this,
+            sensorManager!!.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
+        )
+        sensorManager!!.registerListener(
+            this,
+            sensorManager!!.getDefaultSensor(Sensor.TYPE_ACCELEROMETER),
+            DATA_RATE
+        )
     }
 
     fun press_gear(view: View) {
         gear = gear xor 1
         val v = (getSystemService(Context.VIBRATOR_SERVICE) as Vibrator)
-        v.vibrate(VibrationEffect.createOneShot(vib_len,
-            VibrationEffect.DEFAULT_AMPLITUDE))
+        v.vibrate(
+            VibrationEffect.createOneShot(
+                vib_len,
+                VibrationEffect.DEFAULT_AMPLITUDE
+            )
+        )
         if (gear == 1) //GEAR_DOWN
         {
             gear_btn.setBackgroundColor(Color.GREEN)
@@ -230,32 +380,48 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
     fun flaps_up(view: View) {
         val v = (getSystemService(Context.VIBRATOR_SERVICE) as Vibrator)
-        v.vibrate(VibrationEffect.createOneShot(vib_len,
-            VibrationEffect.DEFAULT_AMPLITUDE))
+        v.vibrate(
+            VibrationEffect.createOneShot(
+                vib_len,
+                VibrationEffect.DEFAULT_AMPLITUDE
+            )
+        )
         fu = fu xor 1
         buttons = buttons xor (1 shl FLAPS_UP)
     }
 
     fun flaps_down(view: View) {
         val v = (getSystemService(Context.VIBRATOR_SERVICE) as Vibrator)
-        v.vibrate(VibrationEffect.createOneShot(vib_len,
-            VibrationEffect.DEFAULT_AMPLITUDE))
+        v.vibrate(
+            VibrationEffect.createOneShot(
+                vib_len,
+                VibrationEffect.DEFAULT_AMPLITUDE
+            )
+        )
         fd = fd xor 1
         buttons = buttons xor (1 shl FLAPS_DOWN)
     }
 
     fun toggle_view(view: View) {
         val v = (getSystemService(Context.VIBRATOR_SERVICE) as Vibrator)
-        v.vibrate(VibrationEffect.createOneShot(vib_len,
-            VibrationEffect.DEFAULT_AMPLITUDE))
+        v.vibrate(
+            VibrationEffect.createOneShot(
+                vib_len,
+                VibrationEffect.DEFAULT_AMPLITUDE
+            )
+        )
         vt = vt xor 1
         buttons = buttons xor (1 shl TOGGLE_VIEW)
     }
 
     fun reset_view(view: View) {
         val v = (getSystemService(Context.VIBRATOR_SERVICE) as Vibrator)
-        v.vibrate(VibrationEffect.createOneShot(vib_len,
-            VibrationEffect.DEFAULT_AMPLITUDE))
+        v.vibrate(
+            VibrationEffect.createOneShot(
+                vib_len,
+                VibrationEffect.DEFAULT_AMPLITUDE
+            )
+        )
         buttons = buttons xor (1 shl RESET_VIEW)
     }
 
@@ -288,8 +454,12 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             buttons = buttons and (1 shl BRAKE).inv()
         }
         val v = (getSystemService(Context.VIBRATOR_SERVICE) as Vibrator)
-        v.vibrate(VibrationEffect.createOneShot(vib_len,
-            VibrationEffect.DEFAULT_AMPLITUDE))
+        v.vibrate(
+            VibrationEffect.createOneShot(
+                vib_len,
+                VibrationEffect.DEFAULT_AMPLITUDE
+            )
+        )
     }
 
 
@@ -312,7 +482,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         val yVal = event.values[1]
         val zVal = event.values[2]
 
-        rudderSeek = findViewById<SeekBar>(R.id.rudderSeek)
+//        rudderSeek = findViewById<SeekBar>(R.id.rudderSeek)
 //        var azimuth_raw = 0
         var throttle_raw = 0
 //        if (rudderSeek != null)
@@ -331,9 +501,11 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
         getRotationMatrix(rMat, null, event.values, gmf)
         val rotationMatrixAdjusted = FloatArray(9)
-        SensorManager.remapCoordinateSystem(rMat,
+        SensorManager.remapCoordinateSystem(
+            rMat,
             SensorManager.AXIS_MINUS_Y, SensorManager.AXIS_X,
-            rotationMatrixAdjusted);
+            rotationMatrixAdjusted
+        );
         getOrientation(rMat, ori)
 
 //        azimuth = ori[0]
@@ -394,8 +566,11 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
         if (hit_limit) {
             v.vibrate(
-                VibrationEffect.createOneShot(400L,
-                    VibrationEffect.EFFECT_HEAVY_CLICK))
+                VibrationEffect.createOneShot(
+                    400L,
+                    VibrationEffect.EFFECT_HEAVY_CLICK
+                )
+            )
         }
 
 
@@ -409,15 +584,21 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
         xAxis = findViewById(R.id.xAxis)
         yAxis = findViewById(R.id.yAxis)
-        zAxis = findViewById(R.id.zAxis)
+//        zAxis = findViewById(R.id.zAxis)
         throttleAxis = findViewById(R.id.throttleAxis)
 
         xAxis?.text = "Roll: ".plus(String.format("%.0f", adjusted_roll))
         yAxis?.text = "Pitch: ".plus(String.format("%.0f", adjusted_pitch))
-        zAxis?.text = "Yaw: ".plus(String.format("%.0f", adjusted_azimuth))
+//        zAxis?.text = "Yaw: ".plus(String.format("%.0f", adjusted_azimuth))
         throttleAxis?.text = "Throttle: ".plus(throttle_raw)
 
-        msg_string = String.format("%.2f", adjusted_roll) + " " + String.format("%.2f", adjusted_pitch) + " " + String.format("%.2f", adjusted_azimuth) + " " + String.format("%.2f", adjusted_throttle) + " " + String.format("%d", buttons)
+        msg_string = String.format("%.2f", adjusted_roll) + " " + String.format(
+            "%.2f",
+            adjusted_pitch
+        ) + " " + String.format("%.2f", adjusted_azimuth) + " " + String.format(
+            "%.2f",
+            adjusted_throttle
+        ) + " " + String.format("%d", buttons)
 
         azimuth = 0f
         if (azimuth_raw > 50) {
@@ -468,8 +649,16 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     }
     override fun onResume() {
         super.onResume()
-        sensorManager!!.registerListener(this, sensorManager!!.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD), 1000000)
-        sensorManager!!.registerListener(this, sensorManager!!.getDefaultSensor(Sensor.TYPE_ACCELEROMETER), DATA_RATE)
+        sensorManager!!.registerListener(
+            this,
+            sensorManager!!.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD),
+            1000000
+        )
+        sensorManager!!.registerListener(
+            this,
+            sensorManager!!.getDefaultSensor(Sensor.TYPE_ACCELEROMETER),
+            DATA_RATE
+        )
 //        setContentView(R.layout.activity_main)
     }
 
