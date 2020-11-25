@@ -1,6 +1,7 @@
 package com.example.joystick.mqtt
 
 import android.content.Context
+import android.content.SharedPreferences
 import android.util.Log
 import com.example.joystick.*
 import org.eclipse.paho.android.service.MqttAndroidClient
@@ -15,7 +16,9 @@ class MqttClientHelper(context: Context?) {
     }
 
     var mqttAndroidClient: MqttAndroidClient
-    val serverUri = SOLACE_MQTT_HOST
+    var saved: SharedPreferences = context!!.getSharedPreferences("preferences", 0)
+    var solace_mqtt_host = saved.getString("hostIP", "0.0.0.0")
+    val serverUri = solace_mqtt_host
     private val clientId: String = MqttClient.generateClientId()
 
     fun setCallback(callback: MqttCallbackExtended?) {
@@ -30,6 +33,7 @@ class MqttClientHelper(context: Context?) {
             }
 
             override fun connectionLost(throwable: Throwable) {}
+
             @Throws(Exception::class)
             override fun messageArrived(
                 topic: String,

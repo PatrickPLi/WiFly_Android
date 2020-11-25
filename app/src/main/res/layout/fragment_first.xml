@@ -156,13 +156,15 @@
         android:layout_height="wrap_content"
         android:layout_gravity="center|top|left"
         android:layout_margin="@dimen/fab_margin"
+        android:visibility="visible"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toStartOf="@+id/toggleView"
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.0"
-        app:srcCompat="@android:drawable/ic_menu_rotate" />
+        app:srcCompat="@android:drawable/ic_menu_rotate"
+        tools:visibility="visible" />
 
     <Button
         android:id="@+id/lookUp"

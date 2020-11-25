@@ -2,6 +2,7 @@ package com.example.joystick
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.SharedPreferences
 import android.content.pm.ActivityInfo
 import android.graphics.Color
 import android.hardware.Sensor
@@ -101,6 +102,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
     // System display. Need this for determining rotation.
     private var mDisplay: Display? = null
+
 
     private val mqttClient by lazy {
         MqttClientHelper(this)
@@ -232,6 +234,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
         setContentView(R.layout.activity_main)
         setSupportActionBar(findViewById(R.id.toolbar))
+        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
         findViewById<FloatingActionButton>(R.id.fab).setOnClickListener {
             zeroAxis()
@@ -242,9 +245,11 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         setMqttCallBack()
         Timer("CheckMqttConnection", false).schedule(3000) {
             if (!mqttClient.isConnected()) {
+                var saved: SharedPreferences = getSharedPreferences("preferences", 0)
+                var mqtt_host = saved.getString("hostIP", "0.0.0.0")
                 Snackbar.make(
                     findViewById(android.R.id.content),
-                    "Failed to connect to: '$SOLACE_MQTT_HOST' within 3 seconds",
+                    "Failed to connect to: '$mqtt_host' within 3 seconds. Try updating host IP and restart app.",
                     Snackbar.LENGTH_INDEFINITE
                 )
                     .setAction("Action", null).show()
@@ -283,7 +288,9 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     private fun setMqttCallBack() {
         mqttClient.setCallback(object : MqttCallbackExtended {
             override fun connectComplete(b: Boolean, s: String) {
-                val snackbarMsg = "Connected to host:\n'$SOLACE_MQTT_HOST'."
+                var saved: SharedPreferences = getSharedPreferences("preferences", 0)
+                var mqtt_host = saved.getString("hostIP", "0.0.0.0")
+                val snackbarMsg = "Connected to host:\n'$mqtt_host'."
                 Log.w("Debug", snackbarMsg)
                 Snackbar.make(
                     findViewById(android.R.id.content),
@@ -308,14 +315,18 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             }
 
             override fun connectionLost(throwable: Throwable) {
-                val snackbarMsg = "Connection to host lost:\n'$SOLACE_MQTT_HOST'"
+                var saved: SharedPreferences = getSharedPreferences("preferences", 0)
+                var mqtt_host = saved.getString("hostIP", "0.0.0.0")
+                val snackbarMsg = "Connection to host lost:\n'$mqtt_host'"
                 Log.w("Debug", snackbarMsg)
                 Snackbar.make(findViewById(android.R.id.content), snackbarMsg, Snackbar.LENGTH_LONG)
                     .setAction("Action", null).show()
             }
 
             override fun deliveryComplete(iMqttDeliveryToken: IMqttDeliveryToken) {
-                Log.w("Debug", "Message published to host '$SOLACE_MQTT_HOST'")
+                var saved: SharedPreferences = getSharedPreferences("preferences", 0)
+                var mqtt_host = saved.getString("hostIP", "0.0.0.0")
+                Log.w("Debug", "Message published to host '$mqtt_host'")
             }
         })
     }
